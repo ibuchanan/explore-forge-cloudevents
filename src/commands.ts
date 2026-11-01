@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import api from "@forge/api";
-import { createTraceContext, formatTraceparent } from "@forge-ahead/logging";
+import {
+  createTraceContext,
+  formatTraceparent,
+  log,
+  withLogContext,
+} from "@forge-ahead/logging";
 import { kvs } from "@forge/kvs";
 
 export type Connection = { id: string; name: string; eventUrl: string };
@@ -140,31 +145,55 @@ export function createCommands(getEventUrl: () => Promise<string>) {
       const source = await getEventUrl();
       if (!destination(connection.eventUrl, source)) throw invalid();
       const trace = createTraceContext();
-      if (trace.isErr()) throw new CommandError(-32003, "Ping delivery failed");
-      const parent = formatTraceparent(trace.value);
-      if (parent.isErr())
-        throw new CommandError(-32003, "Ping delivery failed");
-      const pingId = randomUUID();
-      try {
-        const response = await api.fetch(connection.eventUrl, {
-          method: "POST",
-          redirect: "manual",
-          headers: { "Content-Type": "application/cloudevents+json" },
-          body: JSON.stringify({
-            specversion: "1.0",
-            id: pingId,
-            source,
-            type: "ping",
-            data: {},
-            traceparent: parent.value,
-          }),
-        });
-        if (response.status !== 204)
-          throw new Error("Peer did not acknowledge ping");
-      } catch {
+      if (trace.isErr()) {
+        log.info(
+          { connectionId: connection.id, reason: "trace-unavailable" },
+          "ping failed",
+        );
         throw new CommandError(-32003, "Ping delivery failed");
       }
-      return { delivered: true, pingId, traceId: trace.value.traceId };
+      const parent = formatTraceparent(trace.value);
+      if (parent.isErr()) {
+        withLogContext({ ...trace.value }, () =>
+          log.info(
+            { connectionId: connection.id, reason: "trace-unavailable" },
+            "ping failed",
+          ),
+        );
+        throw new CommandError(-32003, "Ping delivery failed");
+      }
+      const pingId = randomUUID();
+      return withLogContext({ ...trace.value }, async () => {
+        try {
+          const response = await api.fetch(connection.eventUrl, {
+            method: "POST",
+            redirect: "manual",
+            headers: { "Content-Type": "application/cloudevents+json" },
+            body: JSON.stringify({
+              specversion: "1.0",
+              id: pingId,
+              source,
+              type: "ping",
+              data: {},
+              traceparent: parent.value,
+            }),
+          });
+          if (response.status !== 204)
+            throw new Error("Peer did not acknowledge ping");
+        } catch {
+          log.info(
+            {
+              eventId: pingId,
+              connectionId: connection.id,
+              reason: "delivery-unavailable",
+            },
+            "ping failed",
+          );
+          throw new CommandError(-32003, "Ping delivery failed");
+        }
+        log.info({ eventId: pingId, connectionId: connection.id }, "ping sent");
+        return { delivered: true, pingId, traceId: trace.value.traceId };
+      });
     }
     if (method === "connections.delete") {
       if (

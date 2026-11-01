@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const records: Record<string, unknown>[] = [];
+
 const { get, set, getUrl, fetch } = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
@@ -20,6 +22,10 @@ vi.mock("@forge-ahead/logging", async (importOriginal) => {
     ...actual,
     createTraceContext: vi.fn(actual.createTraceContext),
     formatTraceparent: vi.fn(actual.formatTraceparent),
+    log: {
+      info: (fields: Record<string, unknown>, message: string) =>
+        records.push({ ...actual.getLogContext(), ...fields, message }),
+    },
   };
 });
 
@@ -42,6 +48,7 @@ async function rpc(method: string, params: object = {}) {
 describe("authenticated ping.send RPC", () => {
   let stored: unknown;
   beforeEach(() => {
+    records.length = 0;
     stored = undefined;
     get.mockReset().mockImplementation(async () => stored);
     set.mockReset().mockImplementation(async (_key: string, value: unknown) => {
@@ -74,6 +81,20 @@ describe("authenticated ping.send RPC", () => {
       redirect: "manual",
       headers: { "Content-Type": "application/cloudevents+json" },
     });
+    expect(records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: "ping sent",
+          eventId: sent.result.pingId,
+          connectionId,
+          traceId: sent.result.traceId,
+          spanId: expect.any(String),
+          traceFlags: 0,
+        }),
+      ]),
+    );
+    expect(JSON.stringify(records)).not.toContain(peer);
+    expect(JSON.stringify(records)).not.toContain("token");
     expect(JSON.parse(options.body)).toEqual({
       specversion: "1.0",
       id: sent.result.pingId,
@@ -118,6 +139,21 @@ describe("authenticated ping.send RPC", () => {
     });
     expect(JSON.stringify(failed)).not.toContain(peer);
     expect(fetch).toHaveBeenCalledTimes(2);
+    expect(
+      records.filter(({ message }) => message === "ping failed"),
+    ).toHaveLength(2);
+    expect(records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: "ping failed",
+          connectionId,
+          reason: "delivery-unavailable",
+          traceId: expect.any(String),
+          eventId: expect.any(String),
+        }),
+      ]),
+    );
+    expect(JSON.stringify(records)).not.toContain(peer);
   });
 
   it("fails before delivery when trace creation fails", async () => {
@@ -136,6 +172,15 @@ describe("authenticated ping.send RPC", () => {
       message: "Ping delivery failed",
     });
     expect(fetch).not.toHaveBeenCalled();
+    expect(records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: "ping failed",
+          connectionId: created.result.connection.id,
+          reason: "trace-unavailable",
+        }),
+      ]),
+    );
   });
 
   it("fails before delivery when trace formatting fails", async () => {
@@ -154,6 +199,16 @@ describe("authenticated ping.send RPC", () => {
       message: "Ping delivery failed",
     });
     expect(fetch).not.toHaveBeenCalled();
+    expect(records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: "ping failed",
+          connectionId: created.result.connection.id,
+          reason: "trace-unavailable",
+          traceId: expect.any(String),
+        }),
+      ]),
+    );
   });
 
   it("rejects unknown and deleted IDs before any delivery", async () => {
