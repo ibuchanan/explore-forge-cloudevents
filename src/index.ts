@@ -1,36 +1,51 @@
-/**
- * @returns {import('@forge/api').WebTriggerResponse}
- */
-const buildOutput = (rnd) => ({
-  body: '{"hello": "world"}',
-  headers: {
-    "Content-Type": ["application/json"],
-    "X-Request-Id": [`rnd-${rnd}`],
-  },
-  statusCode: 200,
-  statusText: "OK",
+import api, {
+  route,
+  webTrigger,
+  type WebTriggerRequest,
+  type WebTriggerResponse,
+} from "@forge/api";
+import { makeResolver } from "@forge/resolver";
+import { createAdminHandler } from "./admin";
+import { createCommands, type Commands } from "./commands";
+import { createRpcHandler } from "./rpc";
+
+const dispatch = createCommands(() => webTrigger.getUrl("peer-event"));
+
+async function hasAdminPermission(): Promise<boolean> {
+  const response = await api
+    .asUser()
+    .requestJira(route`/rest/api/3/mypermissions?permissions=ADMINISTER`);
+  if (!response.ok) return false;
+  const body: unknown = await response.json();
+  if (typeof body !== "object" || body === null || !("permissions" in body))
+    return false;
+  const permissions = body.permissions;
+  if (
+    typeof permissions !== "object" ||
+    permissions === null ||
+    !("ADMINISTER" in permissions)
+  )
+    return false;
+  const admin = permissions.ADMINISTER;
+  return (
+    typeof admin === "object" &&
+    admin !== null &&
+    "havePermission" in admin &&
+    admin.havePermission === true
+  );
+}
+
+const admin = createAdminHandler(dispatch, hasAdminPermission);
+export const adminResolver = makeResolver<Commands>({
+  "endpoint.get": ({ payload }) => admin(payload),
 });
 
-/**
- * @param {import('@forge/api').WebTriggerRequest} event
- * @param {import('@forge/api').WebTriggerContext} context
- * @returns {Promise<import('@forge/api').WebTriggerResponse>}
- */
-exports.runAsync = (event, context) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const result = buildOutput(Math.random());
-      resolve(result);
-    }, 1000);
-  });
-};
+export const runRpc = createRpcHandler(
+  dispatch,
+  () => process.env["RPC_BEARER_SECRET"],
+);
 
-/**
- * @param {import('@forge/api').WebTriggerRequest} event
- * @param {import('@forge/api').WebTriggerContext} context
- * @returns {import('@forge/api').WebTriggerResponse}
- */
-exports.runSync = (event, context) => {
-  const result = buildOutput(Math.random());
-  return result;
-};
+// Ticket 03 replaces this placeholder with the CloudEvents receiver. It does not share RPC authentication.
+export const runEvent = async (
+  _request: WebTriggerRequest,
+): Promise<WebTriggerResponse> => ({ statusCode: 501 });

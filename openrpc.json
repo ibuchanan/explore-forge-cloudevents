@@ -1,0 +1,33 @@
+{
+  "openrpc": "1.3.2",
+  "info": {
+    "title": "Ping-pong configuration commands",
+    "version": "0.1.0",
+    "description": "Single-call JSON-RPC 2.0 over the config-rpc web trigger. Requires Authorization: Bearer <per-environment runtime secret>. Batches, notifications, positional params, and null IDs are unsupported. The peer-event endpoint does not use this credential."
+  },
+  "methods": [
+    {
+      "name": "endpoint.get",
+      "summary": "Get this installation's SDK-derived peer event URL",
+      "params": [],
+      "paramStructure": "by-name",
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["eventUrl"],
+          "additionalProperties": false,
+          "properties": { "eventUrl": { "type": "string", "format": "uri" } }
+        }
+      },
+      "errors": [
+        { "code": -32600, "message": "Invalid Request" },
+        { "code": -32601, "message": "Method not found" },
+        { "code": -32602, "message": "Invalid params" },
+        { "code": -32603, "message": "Internal error" },
+        { "code": -32700, "message": "Parse error" },
+        { "code": -32001, "message": "Unauthorized" }
+      ]
+    }
+  ]
+}

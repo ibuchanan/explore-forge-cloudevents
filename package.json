@@ -46,6 +46,7 @@
     "@forge-ahead/errors": "github:ibuchanan/forge-ahead-errors",
     "@forge-ahead/logging": "github:ibuchanan/forge-ahead-logging",
     "@forge/api": "^8.3.0",
+    "@forge/resolver": "^2.0.2",
     "cloudevents": "^10.0.0",
     "zod": "^4.6.7"
   },

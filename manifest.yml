@@ -1,27 +1,32 @@
 modules:
   webtrigger:
-    - key: explore-forge-cloudevents-webtrigger-sync
-      function: sync
+    - key: peer-event
+      function: event
       urlFormat: v2
       request:
         authentication: none
       response:
         type: dynamic
-    - key: explore-forge-cloudevents-webtrigger-async
-      function: async
+    - key: config-rpc
+      function: rpc
       urlFormat: v2
       request:
         authentication: none
       response:
         type: dynamic
   function:
-    - key: sync
-      handler: index.runSync
-    - key: async
-      handler: index.runAsync
+    - key: event
+      handler: index.runEvent
+    - key: rpc
+      handler: index.runRpc
+    - key: adminResolver
+      handler: index.adminResolver
 app:
   runtime:
     name: nodejs24.x
     memoryMB: 256
     architecture: arm64
   id: ari:cloud:ecosystem::app/5e307f3a-16fb-45b0-b459-6bea666cd5ed
+permissions:
+  scopes:
+    - read:jira-work
