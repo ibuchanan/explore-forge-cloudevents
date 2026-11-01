@@ -38,7 +38,7 @@ const shape = (
   Object.keys(value).length === fields.length &&
   fields.every((field) => Object.hasOwn(value, field));
 
-async function read(): Promise<Connection[]> {
+export async function read(): Promise<Connection[]> {
   let value: unknown;
   try {
     value = await kvs.get(key);
