@@ -28,6 +28,119 @@
         { "code": -32700, "message": "Parse error" },
         { "code": -32001, "message": "Unauthorized" }
       ]
+    },
+    {
+      "name": "connections.list",
+      "summary": "List this installation's configured peers without probing them",
+      "params": [],
+      "paramStructure": "by-name",
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["connections"],
+          "additionalProperties": false,
+          "properties": {
+            "connections": {
+              "type": "array",
+              "maxItems": 20,
+              "items": { "$ref": "#/components/schemas/Connection" }
+            }
+          }
+        }
+      },
+      "errors": [
+        { "code": -32601, "message": "Method not found" },
+        { "code": -32602, "message": "Invalid params" },
+        { "code": -32603, "message": "Internal error" },
+        { "code": -32002, "message": "Configuration unavailable" },
+        { "code": -32001, "message": "Unauthorized" }
+      ]
+    },
+    {
+      "name": "connections.create",
+      "summary": "Save an immutable peer connection without contacting the peer",
+      "params": [
+        {
+          "name": "name",
+          "required": true,
+          "schema": { "type": "string", "minLength": 1, "maxLength": 100 }
+        },
+        {
+          "name": "eventUrl",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uri",
+            "description": "HTTPS URL, at most 2048 UTF-8 bytes; no credentials, query, fragment, or self-connection."
+          }
+        }
+      ],
+      "paramStructure": "by-name",
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["connection"],
+          "additionalProperties": false,
+          "properties": {
+            "connection": { "$ref": "#/components/schemas/Connection" }
+          }
+        }
+      },
+      "errors": [
+        { "code": -32601, "message": "Method not found" },
+        { "code": -32602, "message": "Invalid params" },
+        { "code": -32603, "message": "Internal error" },
+        { "code": -32002, "message": "Configuration unavailable" },
+        { "code": -32001, "message": "Unauthorized" }
+      ]
+    },
+    {
+      "name": "connections.delete",
+      "summary": "Delete a peer connection by stable ID, idempotently",
+      "params": [
+        {
+          "name": "connectionId",
+          "required": true,
+          "schema": { "type": "string", "minLength": 1 }
+        }
+      ],
+      "paramStructure": "by-name",
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["deleted"],
+          "additionalProperties": false,
+          "properties": { "deleted": { "type": "boolean" } }
+        }
+      },
+      "errors": [
+        { "code": -32601, "message": "Method not found" },
+        { "code": -32602, "message": "Invalid params" },
+        { "code": -32603, "message": "Internal error" },
+        { "code": -32002, "message": "Configuration unavailable" },
+        { "code": -32001, "message": "Unauthorized" }
+      ]
     }
-  ]
+  ],
+  "components": {
+    "schemas": {
+      "Connection": {
+        "type": "object",
+        "required": ["id", "name", "eventUrl"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "eventUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Exact configured HTTPS capability URL, at most 2048 UTF-8 bytes."
+          }
+        }
+      }
+    }
+  }
 }

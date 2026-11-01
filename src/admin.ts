@@ -1,15 +1,11 @@
-import { CommandError, type Commands } from "./commands";
+import { CommandError } from "./commands";
 
 export function createAdminHandler(
-  dispatch: (
-    method: string,
-    params: unknown,
-  ) => Promise<ReturnType<Commands["endpoint.get"]>>,
+  dispatch: (method: string, params: unknown) => Promise<unknown>,
   hasAdminPermission: () => Promise<boolean>,
+  method = "endpoint.get",
 ) {
-  return async (
-    params: Record<string, never>,
-  ): Promise<ReturnType<Commands["endpoint.get"]>> => {
+  return async (params: unknown): Promise<unknown> => {
     let allowed = false;
     try {
       allowed = await hasAdminPermission();
@@ -18,7 +14,7 @@ export function createAdminHandler(
     }
     if (!allowed) throw new Error("Forbidden");
     try {
-      return await dispatch("endpoint.get", params);
+      return await dispatch(method, params);
     } catch (error) {
       if (error instanceof CommandError) throw error;
       throw new Error("Internal error");

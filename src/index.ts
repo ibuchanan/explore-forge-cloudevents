@@ -35,9 +35,31 @@ async function hasAdminPermission(): Promise<boolean> {
   );
 }
 
-const admin = createAdminHandler(dispatch, hasAdminPermission);
 export const adminResolver = makeResolver<Commands>({
-  "endpoint.get": ({ payload }) => admin(payload),
+  "endpoint.get": ({ payload }) =>
+    createAdminHandler(
+      dispatch,
+      hasAdminPermission,
+      "endpoint.get",
+    )(payload) as Promise<ReturnType<Commands["endpoint.get"]>>,
+  "connections.list": ({ payload }) =>
+    createAdminHandler(
+      dispatch,
+      hasAdminPermission,
+      "connections.list",
+    )(payload) as Promise<ReturnType<Commands["connections.list"]>>,
+  "connections.create": ({ payload }) =>
+    createAdminHandler(
+      dispatch,
+      hasAdminPermission,
+      "connections.create",
+    )(payload) as Promise<ReturnType<Commands["connections.create"]>>,
+  "connections.delete": ({ payload }) =>
+    createAdminHandler(
+      dispatch,
+      hasAdminPermission,
+      "connections.delete",
+    )(payload) as Promise<ReturnType<Commands["connections.delete"]>>,
 });
 
 export const runRpc = createRpcHandler(
