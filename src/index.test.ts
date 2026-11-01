@@ -22,7 +22,7 @@ vi.mock("@forge/resolver", () => ({
   },
 }));
 
-import { adminResolver, runRpc } from "./index";
+import { adminResolver, runEvent, runRpc } from "./index";
 
 const rpcRequest = {
   method: "POST" as const,
@@ -36,6 +36,147 @@ const rpcRequest = {
   path: "",
   queryParameters: {},
 };
+
+const eventRequest = {
+  method: "POST" as const,
+  body: JSON.stringify({
+    specversion: "1.0",
+    id: "event-1",
+    source: "https://peer.example/event",
+    type: "ping",
+    data: {},
+  }),
+  headers: { "content-type": ["application/cloudevents+json"] },
+  path: "",
+  queryParameters: {},
+};
+
+describe("public peer-event HTTP receiver", () => {
+  it("acknowledges valid ping and terminal pong without requiring RPC credentials", async () => {
+    vi.stubEnv("RPC_BEARER_SECRET", "");
+    for (const event of [
+      JSON.parse(eventRequest.body),
+      {
+        ...JSON.parse(eventRequest.body),
+        type: "pong",
+        data: { pingId: "ping-1" },
+      },
+    ]) {
+      expect(
+        await runEvent({ ...eventRequest, body: JSON.stringify(event) }),
+      ).toEqual({
+        statusCode: 204,
+      });
+    }
+  });
+  it("rejects invalid HTTP envelopes without dispatching or disclosing their contents", async () => {
+    const event = JSON.parse(eventRequest.body);
+    const cases = [
+      [{ ...eventRequest, method: "GET" as const }, 405],
+      [{ ...eventRequest, headers: {} }, 415],
+      [
+        { ...eventRequest, headers: { "Content-Type": ["application/json"] } },
+        415,
+      ],
+      [
+        {
+          ...eventRequest,
+          headers: {
+            "content-type": [
+              "application/cloudevents+json",
+              "application/cloudevents+json",
+            ],
+          },
+        },
+        415,
+      ],
+      [{ ...eventRequest, body: "{" }, 400],
+      [{ ...eventRequest, body: "[]" }, 400],
+      [
+        { ...eventRequest, body: JSON.stringify({ ...event, type: "other" }) },
+        400,
+      ],
+      [
+        {
+          ...eventRequest,
+          body: JSON.stringify({ ...event, data: { unexpected: true } }),
+        },
+        400,
+      ],
+      [
+        {
+          ...eventRequest,
+          body: JSON.stringify({ ...event, type: "pong", data: {} }),
+        },
+        400,
+      ],
+      [
+        {
+          ...eventRequest,
+          body: JSON.stringify({ ...event, source: "http://[" }),
+        },
+        400,
+      ],
+      [
+        {
+          ...eventRequest,
+          body: JSON.stringify({ ...event, specversion: "0.3" }),
+        },
+        400,
+      ],
+      [
+        {
+          ...eventRequest,
+          body: JSON.stringify({ ...event, extra: "unsupported" }),
+        },
+        400,
+      ],
+      [
+        {
+          ...eventRequest,
+          body: JSON.stringify({
+            ...event,
+            data: { padding: "é".repeat(8192) },
+          }),
+        },
+        400,
+      ],
+    ] satisfies Array<[Parameters<typeof runEvent>[0], number]>;
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      for (const [request, statusCode] of cases) {
+        expect(await runEvent(request)).toEqual({ statusCode });
+      }
+      expect(getUrl).not.toHaveBeenCalled();
+      expect(requestJira).not.toHaveBeenCalled();
+      expect(JSON.stringify(log.mock.calls)).not.toContain(
+        "https://peer.example/event",
+      );
+      expect(JSON.stringify(log.mock.calls)).not.toContain("padding");
+    } finally {
+      log.mockRestore();
+    }
+  });
+  it("accepts a relative CloudEvents source URI-reference", async () => {
+    const event = { ...JSON.parse(eventRequest.body), source: "/peer" };
+    expect(
+      await runEvent({ ...eventRequest, body: JSON.stringify(event) }),
+    ).toEqual({
+      statusCode: 204,
+    });
+  });
+  it("accepts optional untrusted trace metadata without echoing it", async () => {
+    const event = {
+      ...JSON.parse(eventRequest.body),
+      traceparent: "invalid-trace",
+    };
+    expect(
+      await runEvent({ ...eventRequest, body: JSON.stringify(event) }),
+    ).toEqual({
+      statusCode: 204,
+    });
+  });
+});
 
 describe("Forge handler wiring", () => {
   beforeEach(() => {

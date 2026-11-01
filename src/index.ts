@@ -1,12 +1,8 @@
-import api, {
-  route,
-  webTrigger,
-  type WebTriggerRequest,
-  type WebTriggerResponse,
-} from "@forge/api";
+import api, { route, webTrigger } from "@forge/api";
 import { makeResolver } from "@forge/resolver";
 import { createAdminHandler } from "./admin";
-import { createCommands, type Commands } from "./commands";
+import { type Commands, createCommands } from "./commands";
+import { receiveEvent } from "./event-receiver";
 import { createRpcHandler } from "./rpc";
 
 const dispatch = createCommands(() => webTrigger.getUrl("peer-event"));
@@ -67,7 +63,4 @@ export const runRpc = createRpcHandler(
   () => process.env["RPC_BEARER_SECRET"],
 );
 
-// Ticket 03 replaces this placeholder with the CloudEvents receiver. It does not share RPC authentication.
-export const runEvent = async (
-  _request: WebTriggerRequest,
-): Promise<WebTriggerResponse> => ({ statusCode: 501 });
+export const runEvent = receiveEvent;

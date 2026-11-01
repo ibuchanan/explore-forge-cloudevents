@@ -1,0 +1,149 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Peer ping and pong events",
+    "version": "0.1.0"
+  },
+  "defaultContentType": "application/cloudevents+json",
+  "channels": {
+    "peerEvents": {
+      "address": "/",
+      "messages": {
+        "PingEvent": {
+          "$ref": "#/components/messages/PingEvent"
+        },
+        "PongEvent": {
+          "$ref": "#/components/messages/PongEvent"
+        }
+      }
+    }
+  },
+  "operations": {
+    "receiveEvent": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/peerEvents"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/peerEvents/messages/PingEvent"
+        },
+        {
+          "$ref": "#/channels/peerEvents/messages/PongEvent"
+        }
+      ]
+    },
+    "sendEvent": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/peerEvents"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/peerEvents/messages/PingEvent"
+        },
+        {
+          "$ref": "#/channels/peerEvents/messages/PongEvent"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "PingEvent": {
+        "name": "PingEvent",
+        "payload": {
+          "$ref": "#/components/schemas/PingEvent"
+        }
+      },
+      "PongEvent": {
+        "name": "PongEvent",
+        "payload": {
+          "$ref": "#/components/schemas/PongEvent"
+        }
+      }
+    },
+    "schemas": {
+      "PingEvent": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "specversion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "traceparent": {},
+          "type": {
+            "type": "string",
+            "const": "ping"
+          },
+          "data": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "PongEvent": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "specversion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "traceparent": {},
+          "type": {
+            "type": "string",
+            "const": "pong"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "pingId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "pingId"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -8,7 +8,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!!**/dist", "!!**/specs", "!!**/vendor"]
+    "includes": [
+      "**",
+      "!!**/dist",
+      "!!**/specs",
+      "!!**/vendor",
+      "!!src/generated",
+      "!!asyncapi.json"
+    ]
   },
   "formatter": {
     "enabled": true,
