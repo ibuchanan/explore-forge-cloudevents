@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import api from "@forge/api";
+import { createTraceContext, formatTraceparent } from "@forge-ahead/logging";
 import { kvs } from "@forge/kvs";
 
 export type Connection = { id: string; name: string; eventUrl: string };
@@ -12,6 +14,11 @@ export type Commands = {
   };
   "connections.delete": (params: { connectionId: string }) => {
     deleted: boolean;
+  };
+  "ping.send": (params: { connectionId: string }) => {
+    delivered: true;
+    pingId: string;
+    traceId: string;
   };
 };
 
@@ -109,6 +116,7 @@ export function createCommands(getEventUrl: () => Promise<string>) {
         "connections.list",
         "connections.create",
         "connections.delete",
+        "ping.send",
       ].includes(method)
     )
       throw new CommandError(-32601, "Method not found");
@@ -117,6 +125,46 @@ export function createCommands(getEventUrl: () => Promise<string>) {
       return method === "endpoint.get"
         ? { eventUrl: await getEventUrl() }
         : { connections: await read() };
+    }
+    if (method === "ping.send") {
+      if (
+        !shape(params, ["connectionId"]) ||
+        typeof params["connectionId"] !== "string" ||
+        !params["connectionId"]
+      )
+        throw invalid();
+      const connection = (await read()).find(
+        ({ id }) => id === params["connectionId"],
+      );
+      if (!connection) throw invalid();
+      const source = await getEventUrl();
+      if (!destination(connection.eventUrl, source)) throw invalid();
+      const trace = createTraceContext();
+      if (trace.isErr()) throw new CommandError(-32003, "Ping delivery failed");
+      const parent = formatTraceparent(trace.value);
+      if (parent.isErr())
+        throw new CommandError(-32003, "Ping delivery failed");
+      const pingId = randomUUID();
+      try {
+        const response = await api.fetch(connection.eventUrl, {
+          method: "POST",
+          redirect: "manual",
+          headers: { "Content-Type": "application/cloudevents+json" },
+          body: JSON.stringify({
+            specversion: "1.0",
+            id: pingId,
+            source,
+            type: "ping",
+            data: {},
+            traceparent: parent.value,
+          }),
+        });
+        if (response.status !== 204)
+          throw new Error("Peer did not acknowledge ping");
+      } catch {
+        throw new CommandError(-32003, "Ping delivery failed");
+      }
+      return { delivered: true, pingId, traceId: trace.value.traceId };
     }
     if (method === "connections.delete") {
       if (

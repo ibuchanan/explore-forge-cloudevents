@@ -56,6 +56,12 @@ export const adminResolver = makeResolver<Commands>({
       hasAdminPermission,
       "connections.delete",
     )(payload) as Promise<ReturnType<Commands["connections.delete"]>>,
+  "ping.send": ({ payload }) =>
+    createAdminHandler(
+      dispatch,
+      hasAdminPermission,
+      "ping.send",
+    )(payload) as Promise<ReturnType<Commands["ping.send"]>>,
 });
 
 export const runRpc = createRpcHandler(

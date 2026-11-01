@@ -31,3 +31,7 @@ permissions:
   scopes:
     - read:jira-work
     - storage:app
+  external:
+    fetch:
+      backend:
+        - "*"
