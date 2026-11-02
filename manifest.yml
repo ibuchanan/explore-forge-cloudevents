@@ -25,6 +25,12 @@ modules:
       handler: index.runAutomationPing
     - key: automationConfig
       handler: index.automationResolver
+    - key: onInstalled
+      handler: index.onInstalled
+    - key: onUpgraded
+      handler: index.onUpgraded
+    - key: onPreUninstall
+      handler: index.onPreUninstall
   automation:actionProvider:
     - key: ping-actions
       actions:
@@ -67,6 +73,18 @@ modules:
       resolver:
         function: adminResolver
       useAsGetStarted: true
+  trigger:
+    - key: on-installed
+      events:
+        - avi:forge:installed:app
+      function: onInstalled
+    - key: on-upgraded
+      events:
+        - avi:forge:upgraded:app
+      function: onUpgraded
+  preUninstall:
+    - key: on-pre-uninstall
+      function: onPreUninstall
 app:
   runtime:
     name: nodejs24.x

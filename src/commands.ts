@@ -43,14 +43,27 @@ const shape = (
   Object.keys(value).length === fields.length &&
   fields.every((field) => Object.hasOwn(value, field));
 
-export async function read(): Promise<Connection[]> {
-  let value: unknown;
+async function stored(): Promise<unknown> {
   try {
-    value = await kvs.get(key);
+    return await kvs.get(key);
   } catch {
     throw failedStorage();
   }
+}
+
+export async function initializeConnections(): Promise<void> {
+  const value = await stored();
+  if (value === undefined) await save([]);
+  else validate(value);
+}
+
+export async function read(): Promise<Connection[]> {
+  const value = await stored();
   if (value === undefined) return [];
+  return validate(value);
+}
+
+function validate(value: unknown): Connection[] {
   if (
     !shape(value, ["connections"]) ||
     !Array.isArray(value["connections"]) ||

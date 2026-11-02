@@ -1,7 +1,14 @@
 import api, { route, webTrigger } from "@forge/api";
 import { makeResolver } from "@forge/resolver";
 import { createAdminHandler } from "./admin";
-import { CommandError, type Commands, createCommands } from "./commands";
+import {
+  CommandError,
+  type Commands,
+  createCommands,
+  initializeConnections,
+} from "./commands";
+import { kvs } from "@forge/kvs";
+import { log } from "@forge-ahead/logging";
 import { receiveEvent } from "./event-receiver";
 import { createRpcHandler } from "./rpc";
 
@@ -106,3 +113,14 @@ export async function runAutomationPing(payload: unknown) {
 }
 
 export const runEvent = receiveEvent;
+
+export const onInstalled = initializeConnections;
+export const onUpgraded = initializeConnections;
+
+export async function onPreUninstall(): Promise<void> {
+  try {
+    await kvs.delete("peer-connections");
+  } catch {
+    log.info({ reason: "storage-unavailable" }, "connection cleanup failed");
+  }
+}
