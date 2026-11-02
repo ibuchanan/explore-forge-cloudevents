@@ -30,6 +30,26 @@ describe("admin resolver", () => {
     await expect(handle({})).rejects.toThrow("Forbidden");
     expect(dispatch).not.toHaveBeenCalled();
   });
+  it("denies every Configure operation when ADMINISTER is missing", async () => {
+    const dispatch = vi.fn();
+    const denied = vi.fn().mockResolvedValue(false);
+    for (const [method, params] of [
+      ["endpoint.get", {}],
+      ["connections.list", {}],
+      [
+        "connections.create",
+        { name: "Peer", eventUrl: "https://peer.example/event" },
+      ],
+      ["connections.delete", { connectionId: "peer-1" }],
+      ["ping.send", { connectionId: "peer-1" }],
+    ] as const) {
+      await expect(
+        createAdminHandler(dispatch, denied, method)(params),
+      ).rejects.toThrow("Forbidden");
+    }
+    expect(denied).toHaveBeenCalledTimes(5);
+    expect(dispatch).not.toHaveBeenCalled();
+  });
   it("rejects caller-supplied fields without discovering the URL", async () => {
     const getEventUrl = vi
       .fn()

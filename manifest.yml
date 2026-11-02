@@ -46,6 +46,14 @@ modules:
           description: Stable ID of the configured peer connection
       resolver:
         function: automationConfig
+  jira:adminPage:
+    - key: configure-connections
+      title: Configure connections
+      resource: configure-ui
+      render: native
+      resolver:
+        function: adminResolver
+      useAsConfig: true
 app:
   runtime:
     name: nodejs24.x
@@ -63,3 +71,5 @@ permissions:
 resources:
   - key: automation-config
     path: src/automation-config.tsx
+  - key: configure-ui
+    path: src/configure.tsx
