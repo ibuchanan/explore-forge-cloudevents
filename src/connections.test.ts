@@ -19,8 +19,10 @@ vi.mock("@forge/api", () => ({
   route: (parts: TemplateStringsArray) => parts[0],
 }));
 vi.mock("@forge/resolver", () => ({
-  makeResolver: (definitions: typeof handlers.definitions) =>
-    (handlers.definitions = definitions),
+  makeResolver: (definitions: typeof handlers.definitions) => {
+    if ("endpoint.get" in definitions) handlers.definitions = definitions;
+    return definitions;
+  },
 }));
 
 import { adminResolver, runRpc } from "./index";

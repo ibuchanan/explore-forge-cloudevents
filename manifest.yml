@@ -21,6 +21,31 @@ modules:
       handler: index.runRpc
     - key: adminResolver
       handler: index.adminResolver
+    - key: automationPing
+      handler: index.runAutomationPing
+    - key: automationConfig
+      handler: index.automationResolver
+  automation:actionProvider:
+    - key: ping-actions
+      actions:
+        - send-ping
+  action:
+    - key: send-ping
+      name: Send ping to peer
+      description: Send a ping to the selected peer connection
+      actionVerb: TRIGGER
+      function: automationPing
+      config:
+        resource: automation-config
+        render: native
+      inputs:
+        connectionId:
+          title: Connection
+          type: string
+          required: true
+          description: Stable ID of the configured peer connection
+      resolver:
+        function: automationConfig
 app:
   runtime:
     name: nodejs24.x
@@ -35,3 +60,6 @@ permissions:
     fetch:
       backend:
         - "*"
+resources:
+  - key: automation-config
+    path: src/automation-config.tsx

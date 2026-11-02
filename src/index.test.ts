@@ -17,7 +17,7 @@ vi.mock("@forge/api", () => ({
 }));
 vi.mock("@forge/resolver", () => ({
   makeResolver: (definitions: typeof handlers.definitions) => {
-    handlers.definitions = definitions;
+    if ("endpoint.get" in definitions) handlers.definitions = definitions;
     return definitions;
   },
 }));

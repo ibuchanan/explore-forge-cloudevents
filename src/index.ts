@@ -1,7 +1,7 @@
 import api, { route, webTrigger } from "@forge/api";
 import { makeResolver } from "@forge/resolver";
 import { createAdminHandler } from "./admin";
-import { type Commands, createCommands } from "./commands";
+import { CommandError, type Commands, createCommands } from "./commands";
 import { receiveEvent } from "./event-receiver";
 import { createRpcHandler } from "./rpc";
 
@@ -68,5 +68,41 @@ export const runRpc = createRpcHandler(
   dispatch,
   () => process.env["RPC_BEARER_SECRET"],
 );
+
+export const automationResolver = makeResolver<{
+  "connections.list": (params: Record<string, never>) => {
+    connections: { id: string; name: string }[];
+  };
+}>({
+  "connections.list": async ({ payload }) => {
+    try {
+      const { connections } = (await dispatch(
+        "connections.list",
+        payload,
+      )) as ReturnType<Commands["connections.list"]>;
+      return { connections: connections.map(({ id, name }) => ({ id, name })) };
+    } catch (error) {
+      if (error instanceof CommandError) throw error;
+      throw new Error("Internal error");
+    }
+  },
+});
+
+export async function runAutomationPing(payload: unknown) {
+  try {
+    return (await dispatch("ping.send", payload)) as ReturnType<
+      Commands["ping.send"]
+    >;
+  } catch (error) {
+    return {
+      errors: [
+        {
+          message:
+            error instanceof CommandError ? error.message : "Internal error",
+        },
+      ],
+    };
+  }
+}
 
 export const runEvent = receiveEvent;
