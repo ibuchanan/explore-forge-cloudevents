@@ -54,6 +54,19 @@ modules:
       resolver:
         function: adminResolver
       useAsConfig: true
+    - key: status
+      title: Status
+      resource: status-ui
+      render: native
+      resolver:
+        function: adminResolver
+    - key: get-started
+      title: Get Started
+      resource: get-started-ui
+      render: native
+      resolver:
+        function: adminResolver
+      useAsGetStarted: true
 app:
   runtime:
     name: nodejs24.x
@@ -73,3 +86,7 @@ resources:
     path: src/automation-config.tsx
   - key: configure-ui
     path: src/configure.tsx
+  - key: status-ui
+    path: src/status.tsx
+  - key: get-started-ui
+    path: src/get-started.tsx
