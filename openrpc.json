@@ -50,9 +50,11 @@
         }
       },
       "errors": [
+        { "code": -32600, "message": "Invalid Request" },
         { "code": -32601, "message": "Method not found" },
         { "code": -32602, "message": "Invalid params" },
         { "code": -32603, "message": "Internal error" },
+        { "code": -32700, "message": "Parse error" },
         { "code": -32002, "message": "Configuration unavailable" },
         { "code": -32001, "message": "Unauthorized" }
       ]
@@ -89,9 +91,11 @@
         }
       },
       "errors": [
+        { "code": -32600, "message": "Invalid Request" },
         { "code": -32601, "message": "Method not found" },
         { "code": -32602, "message": "Invalid params" },
         { "code": -32603, "message": "Internal error" },
+        { "code": -32700, "message": "Parse error" },
         { "code": -32002, "message": "Configuration unavailable" },
         { "code": -32001, "message": "Unauthorized" }
       ]
@@ -117,10 +121,47 @@
         }
       },
       "errors": [
+        { "code": -32600, "message": "Invalid Request" },
         { "code": -32601, "message": "Method not found" },
         { "code": -32602, "message": "Invalid params" },
         { "code": -32603, "message": "Internal error" },
+        { "code": -32700, "message": "Parse error" },
         { "code": -32002, "message": "Configuration unavailable" },
+        { "code": -32001, "message": "Unauthorized" }
+      ]
+    },
+    {
+      "name": "ping.send",
+      "summary": "Send one ping to a configured peer; success acknowledges delivery, not pong receipt",
+      "params": [
+        {
+          "name": "connectionId",
+          "required": true,
+          "schema": { "type": "string", "minLength": 1 }
+        }
+      ],
+      "paramStructure": "by-name",
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "object",
+          "required": ["delivered", "pingId", "traceId"],
+          "additionalProperties": false,
+          "properties": {
+            "delivered": { "type": "boolean", "const": true },
+            "pingId": { "type": "string", "format": "uuid" },
+            "traceId": { "type": "string", "pattern": "^[0-9a-f]{32}$" }
+          }
+        }
+      },
+      "errors": [
+        { "code": -32600, "message": "Invalid Request" },
+        { "code": -32601, "message": "Method not found" },
+        { "code": -32602, "message": "Invalid params" },
+        { "code": -32603, "message": "Internal error" },
+        { "code": -32700, "message": "Parse error" },
+        { "code": -32002, "message": "Configuration unavailable" },
+        { "code": -32003, "message": "Ping delivery failed" },
         { "code": -32001, "message": "Unauthorized" }
       ]
     }
