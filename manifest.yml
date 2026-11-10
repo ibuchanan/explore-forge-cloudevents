@@ -93,12 +93,18 @@ app:
   id: ari:cloud:ecosystem::app/5e307f3a-16fb-45b0-b459-6bea666cd5ed
 permissions:
   scopes:
+    # Needed for the current user's Jira ADMINISTER permission check.
+    # We accept the risk of classic-scope for sake of this reference implementation
+    # ast-grep-ignore: no-classic-product-scopes
     - read:jira-work
     - storage:app
   external:
     fetch:
       backend:
-        - "*"
+        # Peer endpoints are user-configured and may use any HTTPS host.
+        # We accept the risk of open egress for sake of this reference implementation
+        # ast-grep-ignore: no-wildcard-egress
+        - address: "*"
 resources:
   - key: automation-config
     path: src/automation-config.tsx

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const manifest = readFileSync("manifest.yml", "utf8");
-const contract = JSON.parse(readFileSync("openrpc.json", "utf8"));
+const contract = JSON.parse(readFileSync("specs/openrpc.json", "utf8"));
 
 describe("endpoint discovery contract", () => {
   it("routes a separate event receiver and protected RPC to exported handlers", () => {

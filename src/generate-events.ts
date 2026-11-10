@@ -62,6 +62,9 @@ export async function generateEventContracts() {
 
 if (import.meta.main) {
   const { asyncapi, models } = await generateEventContracts();
-  writeFileSync("asyncapi.json", `${JSON.stringify(asyncapi, null, 2)}\n`);
+  writeFileSync(
+    "specs/asyncapi.json",
+    `${JSON.stringify(asyncapi, null, 2)}\n`,
+  );
   writeFileSync("src/generated/events.ts", models);
 }

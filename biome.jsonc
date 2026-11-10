@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -11,10 +11,15 @@
     "includes": [
       "**",
       "!!**/dist",
+      "!!**/generated",
       "!!**/specs",
       "!!**/vendor",
-      "!!src/generated",
-      "!!asyncapi.json"
+      "!!CODE_OF_CONDUCT.md",
+      "!!CONTRIBUTING.md",
+      "!!LICENSE",
+      "!!README.md",
+      "!!SECURITY.md",
+      "!!.atlassian/OWNER"
     ]
   },
   "formatter": {
